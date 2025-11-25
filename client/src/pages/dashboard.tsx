@@ -27,7 +27,10 @@ export default function Dashboard() {
     setLocation("/");
   };
 
-  if (!farmer) return null;
+  if (!farmer || !farmer.id) {
+    setLocation("/login");
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 dark:from-gray-950 dark:via-emerald-950/20 dark:to-teal-950/20">
@@ -251,6 +254,7 @@ function NotificationsCard({ farmerId }: { farmerId: string }) {
   const { t } = useApp();
   const { data: notifications = [] } = useQuery<Notification[]>({
     queryKey: [`/api/farmers/${farmerId}/notifications`],
+    enabled: !!farmerId,
   });
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -314,6 +318,7 @@ function ProjectsCard({ farmerId }: { farmerId: string }) {
 
   const { data: projects = [] } = useQuery<Project[]>({
     queryKey: [`/api/farmers/${farmerId}/projects`],
+    enabled: !!farmerId,
   });
 
   const addProjectMutation = useMutation({
@@ -415,6 +420,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
 
   const { data: messages = [] } = useQuery<ChatMessage[]>({
     queryKey: [`/api/farmers/${farmerId}/chat`],
+    enabled: !!farmerId,
   });
 
   const chatMutation = useMutation({
@@ -503,11 +509,62 @@ function ChatTab({ farmerId }: { farmerId: string }) {
 function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
   const { t, language } = useApp();
   const [imageUrl, setImageUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const { data: reports = [] } = useQuery<AnalysisReport[]>({
     queryKey: [`/api/farmers/${farmerId}/analysis`],
+    enabled: !!farmerId,
   });
+
+  const uploadToCatbox = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', file);
+
+    const response = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+
+    return await response.text();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: language === "en" ? "Please select an image file" : "Sarudza mufananidzo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const url = await uploadToCatbox(file);
+      setImageUrl(url);
+      toast({
+        title: language === "en" ? "Upload Complete" : "Yaisa",
+        description: language === "en" ? "Image uploaded successfully" : "Mufananidzo waisa",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: language === "en" ? "Failed to upload image" : "Hazvina kubuda",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const analyzeMutation = useMutation({
     mutationFn: (url: string) => apiRequest("POST", "/api/ai/analyze-image", { imageUrl: url, farmerId }),
@@ -537,15 +594,48 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <Input
-              placeholder={language === "en" ? "Image URL" : "Link yeMufananidzo"}
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              data-testid="input-image-url"
-            />
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="image-file-input"
+                className="cursor-pointer w-full px-4 py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-emerald-500 transition-colors text-center"
+              >
+                <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {isUploading
+                    ? (language === "en" ? "Uploading..." : "Iri kuisa...")
+                    : (language === "en" ? "Click to select image" : "Dzvanya usarudze mufananidzo")}
+                </span>
+              </label>
+              <input
+                id="image-file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                disabled={isUploading}
+                className="hidden"
+                data-testid="input-image-file"
+              />
+            </div>
+            
+            {imageUrl && (
+              <div className="relative">
+                <img
+                  src={imageUrl}
+                  alt="Preview"
+                  className="w-full h-48 object-cover rounded-lg"
+                />
+                <button
+                  onClick={() => setImageUrl("")}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             <Button
               onClick={() => analyzeMutation.mutate(imageUrl)}
-              disabled={analyzeMutation.isPending || !imageUrl}
+              disabled={analyzeMutation.isPending || !imageUrl || isUploading}
               data-testid="button-analyze-image"
               className="w-full"
             >
