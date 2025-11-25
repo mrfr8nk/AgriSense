@@ -525,9 +525,9 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   const [imageUrl, setImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
-  const [lastMessageCount, setLastMessageCount] = useState(0);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const lastMessageCountRef = useRef(0);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -546,7 +546,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
 
   // Watch for AI response to arrive
   useEffect(() => {
-    if (isWaitingForResponse && messages.length > lastMessageCount) {
+    if (isWaitingForResponse && messages.length > lastMessageCountRef.current) {
       // Check if the latest message is from the assistant
       const latestMessage = messages[messages.length - 1];
       if (latestMessage && latestMessage.role === "assistant") {
@@ -555,12 +555,12 @@ function ChatTab({ farmerId }: { farmerId: string }) {
         setImageUrl("");
       }
     }
-  }, [messages, isWaitingForResponse, lastMessageCount]);
+  }, [messages, isWaitingForResponse]);
 
   const chatMutation = useMutation({
     mutationFn: async (q: string) => {
-      // Record the current message count before sending
-      setLastMessageCount(messages.length);
+      // Record the current message count before sending using ref to avoid stale closure
+      lastMessageCountRef.current = messages.length;
       setIsWaitingForResponse(true);
       await apiRequest("POST", "/api/ai/chat", { question: q, farmerId });
       // Refetch immediately after posting to show the user message
