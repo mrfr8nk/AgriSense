@@ -189,24 +189,24 @@ function WeatherCard() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
   const [locationName, setLocationName] = useState<string>("");
+  const [locationDenied, setLocationDenied] = useState(false);
 
   useEffect(() => {
-    // Get user location
+    // Get user location - NO FALLBACK TO FAKE DATA
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setLatitude(position.coords.latitude);
           setLongitude(position.coords.longitude);
+          setLocationDenied(false);
         },
         () => {
-          // Default to Harare, Zimbabwe if geolocation fails
-          setLatitude(-17.8277);
-          setLongitude(31.0534);
+          // Don't set fake coordinates - mark as denied
+          setLocationDenied(true);
         }
       );
     } else {
-      setLatitude(-17.8277);
-      setLongitude(31.0534);
+      setLocationDenied(true);
     }
   }, []);
 
@@ -233,6 +233,37 @@ function WeatherCard() {
     },
     enabled: !!latitude && !!longitude,
   });
+
+  // Show message if location is denied or unavailable
+  if (locationDenied) {
+    return (
+      <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cloud className="w-5 h-5" />
+            {t.climateInsights}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <p className="text-gray-900 dark:text-white font-semibold">
+              {language === "en" ? "Location Access Required" : "Kufunga Kweshemu Kunoshaiwa"}
+            </p>
+            <p className="text-gray-600 dark:text-gray-300 text-sm">
+              {language === "en" 
+                ? "Please enable location access in your browser settings to see weather data for your farm." 
+                : "Ndapakurudzira kugadzirisa location access mu browser settings kuti uone weather data yeshemu yako."}
+            </p>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">
+              {language === "en"
+                ? "Real-time weather data requires your accurate GPS location."
+                : "Real-time weather data inoda yako yechokwadi GPS location."}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (isLoading || !weather?.current) {
     return (
