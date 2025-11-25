@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from "react";
-import { Menu, X, Sun, Moon, Leaf, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Menu, X, Sun, Moon, Leaf, ChevronLeft, ChevronRight, 
+  TrendingUp, Shield, Globe2, Zap, Heart, Rocket,
+  Users, MessageSquare, Mail, Phone, MapPin, Facebook,
+  Twitter, Instagram, Linkedin, ArrowRight
+} from "lucide-react";
 
 // Import generated images
 import heroImage from "@assets/generated_images/eco-friendly_sustainable_farm_landscape.png";
@@ -352,34 +357,40 @@ function ImageSlider() {
 function Features() {
   const features = [
     {
-      icon: "🌱",
+      icon: TrendingUp,
       title: "Sustainable Growth",
       description: "Build your business while protecting the environment",
+      gradient: "from-emerald-500 to-teal-500",
     },
     {
-      icon: "⚡",
+      icon: Zap,
       title: "High Performance",
       description: "Lightning-fast technology built for the modern world",
+      gradient: "from-yellow-500 to-orange-500",
     },
     {
-      icon: "🔒",
+      icon: Shield,
       title: "Secure & Trusted",
       description: "Enterprise-grade security for your peace of mind",
+      gradient: "from-blue-500 to-indigo-500",
     },
     {
-      icon: "🌍",
+      icon: Globe2,
       title: "Global Impact",
       description: "Join a community making a difference worldwide",
+      gradient: "from-purple-500 to-pink-500",
     },
     {
-      icon: "💚",
+      icon: Heart,
       title: "Eco-Friendly",
       description: "Carbon-neutral operations and green initiatives",
+      gradient: "from-green-500 to-emerald-500",
     },
     {
-      icon: "🚀",
+      icon: Rocket,
       title: "Innovation",
       description: "Cutting-edge technology for future challenges",
+      gradient: "from-red-500 to-pink-500",
     },
   ];
 
@@ -396,21 +407,26 @@ function Features() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              data-testid={`card-feature-${index}`}
-              className="group bg-white/10 dark:bg-white/5 eco:bg-emerald-400/15 border border-white/20 dark:border-white/10 eco:border-emerald-400/40 rounded-2xl p-8 backdrop-blur-md hover:bg-white/20 dark:hover:bg-white/10 eco:hover:bg-emerald-400/25 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
-            >
-              <div className="text-5xl mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white eco:text-emerald-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 eco:text-emerald-700">
-                {feature.description}
-              </p>
-            </div>
-          ))}
+          {features.map((feature, index) => {
+            const IconComponent = feature.icon;
+            return (
+              <div
+                key={index}
+                data-testid={`card-feature-${index}`}
+                className="group bg-white/10 dark:bg-white/5 eco:bg-emerald-400/15 border border-white/20 dark:border-white/10 eco:border-emerald-400/40 rounded-2xl p-8 backdrop-blur-md hover:bg-white/20 dark:hover:bg-white/10 eco:hover:bg-emerald-400/25 transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+              >
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
+                  <IconComponent className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white eco:text-emerald-900 mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 eco:text-emerald-700">
+                  {feature.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -467,14 +483,17 @@ function About() {
 function Services() {
   const services = [
     {
+      icon: Users,
       title: "Consulting",
       description: "Expert guidance for sustainable business transformation",
     },
     {
+      icon: Rocket,
       title: "Development",
       description: "Custom solutions tailored to your needs",
     },
     {
+      icon: MessageSquare,
       title: "Support",
       description: "24/7 dedicated support team ready to help",
     },
@@ -493,21 +512,26 @@ function Services() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {services.map((service, index) => (
-            <div
-              key={index}
-              data-testid={`card-service-${index}`}
-              className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 eco:from-emerald-100 eco:to-teal-100 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800/50 eco:border-emerald-300"
-            >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 mb-4"></div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white eco:text-emerald-900 mb-4">
-                {service.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 eco:text-emerald-700">
-                {service.description}
-              </p>
-            </div>
-          ))}
+          {services.map((service, index) => {
+            const IconComponent = service.icon;
+            return (
+              <div
+                key={index}
+                data-testid={`card-service-${index}`}
+                className="group bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 eco:from-emerald-100 eco:to-teal-100 rounded-2xl p-8 border border-emerald-200 dark:border-emerald-800/50 eco:border-emerald-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <IconComponent className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white eco:text-emerald-900 mb-4">
+                  {service.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 eco:text-emerald-700">
+                  {service.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -525,20 +549,28 @@ function Footer() {
   return (
     <footer
       id="contact"
-      className="w-full bg-gradient-to-b from-gray-900 to-black dark:from-black dark:to-black eco:from-emerald-900 eco:to-emerald-950 text-white"
+      className="w-full bg-gradient-to-b from-gray-900 via-gray-950 to-black dark:from-black dark:to-black eco:from-emerald-900 eco:via-emerald-950 eco:to-emerald-950 text-white relative overflow-hidden"
     >
-      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-24">
+      {/* Decorative Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 pointer-events-none"></div>
+      
+      <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16 lg:py-24 relative z-10">
         {/* Newsletter Section */}
         <div className="grid md:grid-cols-2 gap-12 mb-16 pb-16 border-b border-white/10 eco:border-emerald-400/20">
           <div>
-            <h3 className="text-2xl font-bold mb-4">Stay Updated</h3>
-            <p className="text-gray-400">
-              Subscribe to our newsletter for the latest updates and insights
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-2xl lg:text-3xl font-bold">Stay Updated</h3>
+            </div>
+            <p className="text-gray-400 text-lg">
+              Subscribe to our newsletter for the latest updates, insights, and sustainable farming tips
             </p>
           </div>
           <form
             onSubmit={handleNewsletterSubmit}
-            className="flex gap-3"
+            className="flex flex-col sm:flex-row gap-3"
             data-testid="form-newsletter"
           >
             <input
@@ -547,42 +579,81 @@ function Footer() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               data-testid="input-newsletter-email"
-              className="flex-1 px-4 py-3 rounded-full bg-white/10 border border-white/20 backdrop-blur-md focus:outline-none focus:border-emerald-400/50 text-white placeholder-gray-500 transition-all"
+              className="flex-1 px-5 py-3.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md focus:outline-none focus:border-emerald-400/50 focus:bg-white/15 text-white placeholder-gray-500 transition-all"
               required
             />
             <button
               type="submit"
               data-testid="button-newsletter-submit"
-              className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-full font-bold transition-all hover:scale-105"
+              className="px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 rounded-full font-bold transition-all hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/30 flex items-center justify-center gap-2"
             >
               Subscribe
+              <ArrowRight className="w-4 h-4" />
             </button>
           </form>
         </div>
 
         {/* Footer Grid */}
-        <div className="grid md:grid-cols-4 gap-8 mb-12">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12 mb-12">
           {/* Company */}
-          <div>
-            <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <Leaf className="w-5 h-5 text-emerald-400" />
-              EcoGreen
-            </h4>
-            <p className="text-gray-400 text-sm">
-              Building sustainable solutions for a better tomorrow
+          <div className="lg:col-span-2">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                <Leaf className="w-6 h-6 text-white" />
+              </div>
+              <h4 className="font-bold text-xl">EcoGreen</h4>
+            </div>
+            <p className="text-gray-400 text-sm mb-6 max-w-sm">
+              Building sustainable solutions for a better tomorrow. Empowering farmers with technology and environmental consciousness.
             </p>
+            
+            {/* Social Links */}
+            <div className="flex gap-3">
+              <a
+                href="#"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/20 hover:border-emerald-400/50 flex items-center justify-center transition-all hover:scale-110"
+                aria-label="Facebook"
+              >
+                <Facebook className="w-5 h-5" />
+              </a>
+              <a
+                href="#"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/20 hover:border-emerald-400/50 flex items-center justify-center transition-all hover:scale-110"
+                aria-label="Twitter"
+              >
+                <Twitter className="w-5 h-5" />
+              </a>
+              <a
+                href="#"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/20 hover:border-emerald-400/50 flex items-center justify-center transition-all hover:scale-110"
+                aria-label="Instagram"
+              >
+                <Instagram className="w-5 h-5" />
+              </a>
+              <a
+                href="#"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-emerald-500/20 border border-white/20 hover:border-emerald-400/50 flex items-center justify-center transition-all hover:scale-110"
+                aria-label="LinkedIn"
+              >
+                <Linkedin className="w-5 h-5" />
+              </a>
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h4 className="font-bold text-lg mb-4">Quick Links</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <ArrowRight className="w-4 h-4 text-emerald-400" />
+              Quick Links
+            </h4>
+            <ul className="space-y-3 text-sm">
               <li>
                 <a
                   href="#home"
                   data-testid="link-footer-home"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
                 >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Home
                 </a>
               </li>
@@ -590,8 +661,9 @@ function Footer() {
                 <a
                   href="#features"
                   data-testid="link-footer-features"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
                 >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Features
                 </a>
               </li>
@@ -599,9 +671,19 @@ function Footer() {
                 <a
                   href="#about"
                   data-testid="link-footer-about"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
                 >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   About
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#services"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
+                >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Services
                 </a>
               </li>
             </ul>
@@ -609,14 +691,18 @@ function Footer() {
 
           {/* Resources */}
           <div>
-            <h4 className="font-bold text-lg mb-4">Resources</h4>
-            <ul className="space-y-2 text-sm">
+            <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <ArrowRight className="w-4 h-4 text-emerald-400" />
+              Resources
+            </h4>
+            <ul className="space-y-3 text-sm">
               <li>
                 <a
                   href="#"
                   data-testid="link-footer-blog"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
                 >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Blog
                 </a>
               </li>
@@ -624,8 +710,9 @@ function Footer() {
                 <a
                   href="#"
                   data-testid="link-footer-docs"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
                 >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Documentation
                 </a>
               </li>
@@ -633,47 +720,77 @@ function Footer() {
                 <a
                   href="#"
                   data-testid="link-footer-support"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
                 >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   Support
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="text-gray-400 hover:text-emerald-400 transition-colors flex items-center gap-2 group"
+                >
+                  <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  Community
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Legal */}
+          {/* Contact */}
           <div>
-            <h4 className="font-bold text-lg mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm">
-              <li>
-                <a
-                  href="#"
-                  data-testid="link-footer-privacy"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
-                >
-                  Privacy Policy
+            <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <Phone className="w-4 h-4 text-emerald-400" />
+              Contact
+            </h4>
+            <ul className="space-y-3 text-sm">
+              <li className="flex items-start gap-2 text-gray-400">
+                <Mail className="w-4 h-4 mt-0.5 text-emerald-400 flex-shrink-0" />
+                <a href="mailto:info@ecogreen.com" className="hover:text-emerald-400 transition-colors">
+                  info@ecogreen.com
                 </a>
               </li>
-              <li>
-                <a
-                  href="#"
-                  data-testid="link-footer-terms"
-                  className="text-gray-400 hover:text-emerald-400 transition-colors"
-                >
-                  Terms of Service
-                </a>
+              <li className="flex items-start gap-2 text-gray-400">
+                <Phone className="w-4 h-4 mt-0.5 text-emerald-400 flex-shrink-0" />
+                <span>+1 (555) 123-4567</span>
+              </li>
+              <li className="flex items-start gap-2 text-gray-400">
+                <MapPin className="w-4 h-4 mt-0.5 text-emerald-400 flex-shrink-0" />
+                <span>Green Valley, Earth</span>
               </li>
             </ul>
+            
+            <div className="mt-4 pt-4 border-t border-white/10">
+              <a
+                href="#"
+                data-testid="link-footer-privacy"
+                className="text-xs text-gray-400 hover:text-emerald-400 transition-colors block mb-2"
+              >
+                Privacy Policy
+              </a>
+              <a
+                href="#"
+                data-testid="link-footer-terms"
+                className="text-xs text-gray-400 hover:text-emerald-400 transition-colors block"
+              >
+                Terms of Service
+              </a>
+            </div>
           </div>
         </div>
 
         {/* Copyright */}
-        <div className="border-t border-white/10 eco:border-emerald-400/20 pt-8 text-center text-gray-400 text-sm">
-          <p>
+        <div className="border-t border-white/10 eco:border-emerald-400/20 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-gray-400 text-sm text-center md:text-left">
             &copy; 2025 EcoGreen. All rights reserved. Built with
             <span className="text-emerald-400 mx-1">♻️</span>
             for a sustainable future.
           </p>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <Shield className="w-4 h-4 text-emerald-400" />
+            <span>Secured & Encrypted</span>
+          </div>
         </div>
       </div>
     </footer>

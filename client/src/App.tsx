@@ -12,11 +12,7 @@ import Dashboard from "@/pages/dashboard";
 function ProtectedRoute({ component: Component }: { component: () => JSX.Element }) {
   const { farmer } = useApp();
   
-  if (!farmer) {
-    return <Redirect to="/login" />;
-  }
-  
-  return <Component />;
+  return farmer ? <Component /> : <Redirect to="/login" />;
 }
 
 function Router() {

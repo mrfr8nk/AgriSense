@@ -27,11 +27,6 @@ export default function Dashboard() {
     setLocation("/");
   };
 
-  if (!farmer || !farmer.id) {
-    setLocation("/login");
-    return null;
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-blue-50 dark:from-gray-950 dark:via-emerald-950/20 dark:to-teal-950/20">
       {/* Header */}
