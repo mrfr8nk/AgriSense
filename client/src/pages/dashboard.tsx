@@ -437,11 +437,12 @@ function ProjectsCard({ farmerId }: { farmerId: string }) {
   });
 
   const handleAddProject = () => {
-    if (!newProject.name) return;
+    if (!newProject.name || !farmerId) return;
     addProjectMutation.mutate({
-      ...newProject,
-      farmerId,
+      name: newProject.name,
+      type: newProject.type,
       landSize: newProject.landSize ? parseFloat(newProject.landSize) : null,
+      farmerId: farmerId,
     });
   };
 
@@ -1190,11 +1191,13 @@ function CommunityTab({ farmerId, farmerName }: { farmerId: string; farmerName: 
           </select>
           <Button
             onClick={() => {
-              if (!newPost.content) return;
+              if (!newPost.content || !farmerId || !farmerName) return;
               postMutation.mutate({
-                ...newPost,
-                farmerId,
-                farmerName,
+                content: newPost.content,
+                category: newPost.category,
+                farmerId: farmerId,
+                farmerName: farmerName,
+                timestamp: new Date().toISOString(),
               });
             }}
             disabled={postMutation.isPending || !newPost.content}
