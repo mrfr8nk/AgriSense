@@ -508,16 +508,28 @@ function ChatTab({ farmerId }: { farmerId: string }) {
     formData.append('reqtype', 'fileupload');
     formData.append('fileToUpload', file);
 
-    const response = await fetch('https://catbox.moe/user/api.php', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch('https://catbox.moe/user/api.php', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      throw new Error('Upload failed');
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+
+      const url = await response.text();
+
+      // Validate URL
+      if (!url || !url.startsWith('http')) {
+        throw new Error('Invalid URL returned from upload');
+      }
+
+      return url.trim();
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
     }
-
-    return await response.text();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -533,6 +545,16 @@ function ChatTab({ farmerId }: { farmerId: string }) {
       return;
     }
 
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: language === "en" ? "Image too large (max 10MB)" : "Mufananidzo mukuru zvikuru",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsUploading(true);
     try {
       const url = await uploadToCatbox(file);
@@ -541,10 +563,11 @@ function ChatTab({ farmerId }: { farmerId: string }) {
         title: language === "en" ? "Upload Complete" : "Yaisa",
         description: language === "en" ? "Image uploaded successfully" : "Mufananidzo waisa",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Upload failed:', error);
       toast({
         title: "Error",
-        description: language === "en" ? "Failed to upload image" : "Hazvina kubuda",
+        description: language === "en" ? `Failed to upload: ${error.message || 'Unknown error'}` : "Hazvina kubuda",
         variant: "destructive",
       });
     } finally {
@@ -701,16 +724,28 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
     formData.append('reqtype', 'fileupload');
     formData.append('fileToUpload', file);
 
-    const response = await fetch('https://catbox.moe/user/api.php', {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch('https://catbox.moe/user/api.php', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      throw new Error('Upload failed');
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+
+      const url = await response.text();
+
+      // Validate URL
+      if (!url || !url.startsWith('http')) {
+        throw new Error('Invalid URL returned from upload');
+      }
+
+      return url.trim();
+    } catch (error) {
+      console.error('Upload error:', error);
+      throw error;
     }
-
-    return await response.text();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -726,6 +761,16 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
       return;
     }
 
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "Error",
+        description: language === "en" ? "Image too large (max 10MB)" : "Mufananidzo mukuru zvikuru",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsUploading(true);
     try {
       const url = await uploadToCatbox(file);
@@ -734,10 +779,11 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
         title: language === "en" ? "Upload Complete" : "Yaisa",
         description: language === "en" ? "Image uploaded successfully" : "Mufananidzo waisa",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Upload failed:', error);
       toast({
         title: "Error",
-        description: language === "en" ? "Failed to upload image" : "Hazvina kubuda",
+        description: language === "en" ? `Failed to upload: ${error.message || 'Unknown error'}` : "Hazvina kubuda",
         variant: "destructive",
       });
     } finally {
@@ -751,7 +797,7 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
       refetchReports();
       setImageUrl("");
       toast({
-        title: language === "en" ? "Analysis Complete" : "Kuongorora Kwapera",
+        title: language === "en" ? "Analysis Complete" : "Kuongororwa Kwapera",
         description: language === "en" ? "Image analyzed successfully" : "Mufananidzo waongororwa",
       });
     },
@@ -795,7 +841,7 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
                 data-testid="input-image-file"
               />
             </div>
-            
+
             {imageUrl && (
               <div className="relative">
                 <img
@@ -826,7 +872,7 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
 
       <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
         <CardHeader>
-          <CardTitle>{language === "en" ? "Analysis History" : "Zvakamboongorwa"}</CardTitle>
+          <CardTitle>{language === "en" ? "Analysis History" : "Zvakamboongororwa"}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4 max-h-96 overflow-y-auto">

@@ -85,32 +85,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { question, farmerId } = req.body;
 
       // Save user message
-      await storage.createChatMessage({
+      const userMessage = await storage.createChatMessage({
         farmerId,
         role: "user",
         content: question,
       });
 
-      // Call BK9 API
-      const prompt = encodeURIComponent("You are a helpful farming assistant for African farmers. Provide practical advice about crops, livestock, weather, and sustainable farming practices.");
-      const q = encodeURIComponent(question);
-      const response = await fetch(
-        `https://api.bk9.dev/ai/BK9?BK9=${prompt}&q=${q}&model=gemini_2_5_flash`
-      );
-      const data = await response.json();
+      // Call BK9 API in background
+      (async () => {
+        try {
+          const prompt = encodeURIComponent("You are a helpful farming assistant for African farmers. Provide practical advice about crops, livestock, weather, and sustainable farming practices. Keep responses concise and actionable.");
+          const q = encodeURIComponent(question);
+          const response = await fetch(
+            `https://api.bk9.dev/ai/BK9?BK9=${prompt}&q=${q}&model=gemini_2_5_flash`,
+            { 
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+              }
+            }
+          );
+          
+          if (!response.ok) {
+            throw new Error(`API responded with ${response.status}`);
+          }
+          
+          const data = await response.json();
 
-      if (data.status && data.BK9) {
-        // Save AI response
-        const aiMessage = await storage.createChatMessage({
-          farmerId,
-          role: "assistant",
-          content: data.BK9,
-        });
-        res.json({ message: data.BK9, chatMessage: aiMessage });
-      } else {
-        res.status(500).json({ error: "AI service unavailable" });
-      }
+          if (data.status && data.BK9) {
+            // Save AI response
+            await storage.createChatMessage({
+              farmerId,
+              role: "assistant",
+              content: data.BK9,
+            });
+          } else {
+            // Save error message
+            await storage.createChatMessage({
+              farmerId,
+              role: "assistant",
+              content: "Sorry, I couldn't process that request. Please try again.",
+            });
+          }
+        } catch (error) {
+          console.error('AI API error:', error);
+          await storage.createChatMessage({
+            farmerId,
+            role: "assistant",
+            content: "Sorry, I'm having trouble connecting. Please try again.",
+          });
+        }
+      })();
+
+      // Return immediately with user message
+      res.json({ success: true, userMessage });
     } catch (error: any) {
+      console.error('Chat endpoint error:', error);
       res.status(500).json({ error: error.message });
     }
   });
