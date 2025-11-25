@@ -466,16 +466,16 @@ function ChatTab({ farmerId }: { farmerId: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
   const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
     queryKey: [`/api/farmers/${farmerId}/chat`],
     enabled: !!farmerId,
     refetchInterval: chatMutation.isPending ? 1000 : false,
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const chatMutation = useMutation({
     mutationFn: async (q: string) => {
