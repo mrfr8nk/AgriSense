@@ -1,12 +1,49 @@
 # Overview
 
-EcoGreen is a modern web application featuring a glassmorphism-style landing page with an eco-conscious green aesthetic. The project is built as a full-stack TypeScript application using React for the frontend and Express for the backend, with support for multiple themes (light, dark, and eco) and responsive design across all devices.
+AgriSense AI Pro is a professional farming application with a glassmorphism-style interface featuring an eco-conscious green aesthetic. Built as a full-stack TypeScript application using React for the frontend and Express for the backend, it supports multiple themes (light, dark, and eco) with responsive design across all devices.
+
+**Status**: Production-ready, fully deployable to Vercel with real API integrations.
+
+**Features**:
+- Firebase Google Sign-In + Email/Password Auth
+- Real-time weather data (Open-Meteo)
+- AI chatbot & image analysis (BK9 AI)
+- Farm project management
+- Community forum with engagement
+- Multi-language support (English/Shona)
+- Professional animations & transitions
 
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
+Deploy target: Vercel (configured and tested)
+API approach: Real data only, no mocks
 
 # System Architecture
+
+## Deployment Configuration
+
+**Vercel Setup**
+- vercel.json configured for full-stack deployment
+- buildCommand: `npm run build` (Vite + esbuild)
+- outputDirectory: `dist` (contains both frontend + backend)
+- Routes configured: /api/* → Express backend, /* → React frontend
+- .vercelignore excludes unnecessary files
+- Environment variables required: DATABASE_URL, SESSION_SECRET, Firebase credentials
+
+**Build Process**
+- Frontend: Vite builds to dist/public
+- Backend: esbuild bundles TypeScript to dist/index.js (ESM format)
+- Assets: Generated images included (farmer, landscape, nature, technology)
+- Production optimized: Code splitting, CSS minification, tree-shaking
+
+**Recent Fixes (Nov 25, 2025)**
+- Fixed weather route to use path params (/api/weather/:lat/:lon)
+- Fixed project creation validation
+- Fixed community posts validation
+- Improved error handling and logging
+- Added proper type casting for API responses
+- Updated community forum UI with better styling and empty states
 
 ## Frontend Architecture
 
@@ -58,6 +95,26 @@ Preferred communication style: Simple, everyday language.
 - Database-ready architecture with Drizzle ORM configured for PostgreSQL
 - Schema definitions using Drizzle with Zod validation
 
+## External APIs & Services
+
+**Authentication**
+- Firebase v12+ for Google Sign-In
+- Environment variables: VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, VITE_FIREBASE_APP_ID
+
+**AI & Analysis**
+- BK9 API for chatbot (model: gemini_2_5_flash)
+- BK9 Vision API for crop image analysis (model: meta-llama/llama-4-scout)
+- Requests via fetch (no SDK needed)
+
+**Weather**
+- Open-Meteo API for real-time weather data
+- Free tier, no API key required
+- Cached for performance (1 hour TTL)
+
+**Image Hosting**
+- Catbox.moe for temporary image uploads (free tier)
+- Used for community posts and image analysis
+
 ## External Dependencies
 
 **Database**
@@ -65,30 +122,23 @@ Preferred communication style: Simple, everyday language.
 - Configured for PostgreSQL via @neondatabase/serverless
 - Schema migrations managed through drizzle-kit
 - Connection via DATABASE_URL environment variable
+- Tables: farmers, projects, community_posts, comments, notifications, chat_messages, analysis_reports, weather_cache
 
-**Third-Party UI Libraries**
-- Radix UI for headless, accessible component primitives (accordion, dialog, dropdown, popover, tooltip, etc.)
-- Embla Carousel for touch-enabled carousels
-- Lucide React for consistent icon system
-- React Day Picker for calendar/date selection
-- CMDK for command palette interface
-- Recharts for data visualization components
-
-**Form Management**
-- React Hook Form for performant form state management
-- @hookform/resolvers for validation schema integration
-- Zod for runtime type validation and schema definition
+**UI & Styling**
+- Radix UI for headless component primitives
+- Shadcn/ui component library
+- Lucide React for professional icons (no emoji used)
+- TailwindCSS v4 with custom eco palette
+- Framer Motion for animations
 
 **Development Tools**
-- Replit-specific plugins for development experience (error modal, cartographer, dev banner)
-- PostCSS with Tailwind and Autoprefixer for CSS processing
-- TSX for running TypeScript in development
+- Replit-specific plugins (error modal, cartographer, dev banner)
+- PostCSS with Tailwind v4 and Autoprefixer
+- TSX for TypeScript execution
+- Vite v5 for fast builds
 
-**Session Management**
-- Connect-pg-simple for PostgreSQL-backed session storage (configured but not actively used)
-- Express session middleware ready for authentication implementation
-
-**Utility Libraries**
-- date-fns for date manipulation and formatting
-- clsx and tailwind-merge (via cn utility) for conditional className composition
-- nanoid for generating unique identifiers
+**Other**
+- React Hook Form + Zod for form validation
+- React Query v5 for server state
+- Wouter for lightweight routing
+- Express session + Passport for session management
