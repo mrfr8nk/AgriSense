@@ -8,6 +8,7 @@ export const farmers = pgTable("farmers", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
+  password: text("password"),
   age: integer("age"),
   region: text("region"),
   language: text("language").notNull().default("en"),
@@ -18,6 +19,9 @@ export const farmers = pgTable("farmers", {
 export const insertFarmerSchema = createInsertSchema(farmers).omit({
   id: true,
   createdAt: true,
+}).extend({
+  farmingType: z.string().optional().default("mixed"),
+  password: z.string().optional(),
 });
 
 export type InsertFarmer = z.infer<typeof insertFarmerSchema>;

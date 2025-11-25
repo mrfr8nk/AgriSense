@@ -51,11 +51,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects", async (req, res) => {
     try {
-      const data = insertProjectSchema.parse(req.body);
+      const data = insertProjectSchema.parse({
+        farmerId: req.body.farmerId,
+        type: req.body.type || "crop",
+        name: req.body.name,
+        landSize: req.body.landSize ? parseFloat(req.body.landSize) : null,
+        expectedYield: req.body.expectedYield ? parseInt(req.body.expectedYield) : null,
+        marketPrice: req.body.marketPrice ? parseFloat(req.body.marketPrice) : null,
+        status: req.body.status || "active",
+      });
       const project = await storage.createProject(data);
       res.json(project);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error('Project creation error:', error);
+      res.status(400).json({ error: error.message || "Failed to create project" });
     }
   });
 
@@ -186,9 +195,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Weather API (Open-Meteo)
-  app.get("/api/weather", async (req, res) => {
+  app.get("/api/weather/:latitude/:longitude", async (req, res) => {
     try {
-      const { latitude, longitude } = req.query;
+      const { latitude, longitude } = req.params;
       if (!latitude || !longitude) {
         return res.status(400).json({ error: "Latitude and longitude required" });
       }
@@ -229,11 +238,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/community/posts", async (req, res) => {
     try {
-      const data = insertCommunityPostSchema.parse(req.body);
+      const data = insertCommunityPostSchema.parse({
+        farmerId: req.body.farmerId,
+        farmerName: req.body.farmerName,
+        content: req.body.content,
+        category: req.body.category || "crops",
+        imageUrl: req.body.imageUrl || null,
+        location: req.body.location || null,
+      });
       const post = await storage.createPost(data);
       res.json(post);
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      console.error('Post creation error:', error);
+      res.status(400).json({ error: error.message || "Failed to create post" });
     }
   });
 

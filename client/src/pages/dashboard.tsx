@@ -211,6 +211,11 @@ function WeatherCard() {
 
   const { data: weather, isLoading } = useQuery<any>({
     queryKey: ["/api/weather", latitude, longitude],
+    queryFn: async () => {
+      const response = await fetch(`/api/weather/${latitude}/${longitude}`);
+      if (!response.ok) throw new Error("Failed to fetch weather");
+      return response.json();
+    },
     enabled: !!latitude && !!longitude,
   });
 
@@ -1052,39 +1057,55 @@ function CommunityTab({ farmerId, farmerName }: { farmerId: string; farmerName: 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-4">
-        {posts.map((post) => (
-          <Card key={post.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-lg">{post.farmerName}</CardTitle>
-                  <CardDescription>
-                    {new Date(post.timestamp).toLocaleDateString()} • {post.category}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-900 dark:text-white mb-4">{post.content}</p>
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={() => upvoteMutation.mutate(post.id)}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  data-testid={`button-upvote-${post.id}`}
-                >
-                  <ThumbsUp className="w-4 h-4" />
-                  {post.upvotes}
-                </Button>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <MessageCircle className="w-4 h-4" />
-                  {t.comments}
-                </Button>
-              </div>
+        {posts.length === 0 ? (
+          <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
+            <CardContent className="py-12 text-center">
+              <Users className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <p className="text-gray-600 dark:text-gray-400">{language === "en" ? "No posts yet. Be the first to share!" : "Hakuna maposta. Uye ntanga!"}</p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          posts.map((post) => (
+            <Card key={post.id} className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20 hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold">
+                        {post.farmerName.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">{post.farmerName}</CardTitle>
+                        <CardDescription className="text-xs">
+                          {new Date(post.timestamp).toLocaleDateString()} • {post.category}
+                        </CardDescription>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-gray-900 dark:text-white leading-relaxed">{post.content}</p>
+                <div className="flex items-center gap-2 pt-2">
+                  <Button
+                    onClick={() => upvoteMutation.mutate(post.id)}
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 hover:bg-emerald-100 dark:hover:bg-emerald-900/30"
+                    data-testid={`button-upvote-${post.id}`}
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    <span className="text-sm font-medium">{post.upvotes}</span>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="text-sm">{t.comments}</span>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </div>
 
       <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20 h-fit">
