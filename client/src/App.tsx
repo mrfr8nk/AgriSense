@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/landing";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 
@@ -12,7 +13,7 @@ function ProtectedRoute({ component: Component }: { component: () => JSX.Element
   const { farmer } = useApp();
   
   if (!farmer) {
-    return <Redirect to="/" />;
+    return <Redirect to="/login" />;
   }
   
   return <Component />;
@@ -23,7 +24,8 @@ function Router() {
   
   return (
     <Switch>
-      <Route path="/">{farmer ? <Redirect to="/dashboard" /> : <Login />}</Route>
+      <Route path="/" component={Landing} />
+      <Route path="/login">{farmer ? <Redirect to="/dashboard" /> : <Login />}</Route>
       <Route path="/dashboard">
         <ProtectedRoute component={Dashboard} />
       </Route>

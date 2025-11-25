@@ -123,12 +123,13 @@ function Header() {
           {/* CTA and Theme Toggle */}
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <button
+            <a
+              href="/login"
               data-testid="button-cta-signup"
-              className="hidden sm:inline-px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full font-medium text-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/30"
+              className="hidden sm:inline-flex px-6 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full font-medium text-sm transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/30"
             >
               Get Started
-            </button>
+            </a>
 
             {/* Mobile Menu Toggle */}
             <button
@@ -159,12 +160,13 @@ function Header() {
                   {item.label}
                 </a>
               ))}
-              <button
+              <a
+                href="/login"
                 data-testid="button-mobile-cta-signup"
-                className="w-full mt-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full font-medium text-sm transition-all"
+                className="block w-full mt-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white rounded-full font-medium text-sm transition-all text-center"
               >
                 Get Started
-              </button>
+              </a>
             </div>
           </div>
         )}
@@ -205,18 +207,20 @@ function Hero() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
+            <a
+              href="/login"
               data-testid="button-hero-primary"
-              className="px-8 py-4 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-emerald-950 font-bold rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-emerald-400/50 hover:scale-105"
+              className="px-8 py-4 bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-500 hover:to-teal-500 text-emerald-950 font-bold rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-emerald-400/50 hover:scale-105 text-center"
             >
-              Explore Now
-            </button>
-            <button
+              Get Started
+            </a>
+            <a
+              href="#features"
               data-testid="button-hero-secondary"
-              className="px-8 py-4 bg-white/10 dark:bg-white/5 eco:bg-white/15 hover:bg-white/20 dark:hover:bg-white/10 eco:hover:bg-white/25 border border-white/30 text-white font-bold rounded-full transition-all duration-300 backdrop-blur-md"
+              className="px-8 py-4 bg-white/10 dark:bg-white/5 eco:bg-white/15 hover:bg-white/20 dark:hover:bg-white/10 eco:hover:bg-white/25 border border-white/30 text-white font-bold rounded-full transition-all duration-300 backdrop-blur-md text-center"
             >
               Learn More
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -446,12 +450,13 @@ function About() {
               and future generations. Join us in building a world where
               technology serves both people and nature.
             </p>
-            <button
+            <a
+              href="/login"
               data-testid="button-about-cta"
-              className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-105"
+              className="inline-block px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold rounded-full transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-105"
             >
-              Learn More
-            </button>
+              Join Us Today
+            </a>
           </div>
         </div>
       </div>
