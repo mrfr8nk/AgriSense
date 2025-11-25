@@ -77,7 +77,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {t.hello}, {farmer.name}!
+                  {t.hello}, {farmer?.name || "Farmer"}!
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">{t.welcomeBack}</p>
               </div>
@@ -145,11 +145,15 @@ export default function Dashboard() {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "overview" && <OverviewTab farmerId={farmer.id} />}
-        {activeTab === "chat" && <ChatTab farmerId={farmer.id} />}
-        {activeTab === "analysis" && <ImageAnalysisTab farmerId={farmer.id} />}
-        {activeTab === "planner" && <PlannerTab farmerId={farmer.id} />}
-        {activeTab === "community" && <CommunityTab farmerId={farmer.id} farmerName={farmer.name} />}
+        {farmer && (
+          <>
+            {activeTab === "overview" && <OverviewTab farmerId={farmer.id} />}
+            {activeTab === "chat" && <ChatTab farmerId={farmer.id} />}
+            {activeTab === "analysis" && <ImageAnalysisTab farmerId={farmer.id} />}
+            {activeTab === "planner" && <PlannerTab farmerId={farmer.id} />}
+            {activeTab === "community" && <CommunityTab farmerId={farmer.id} farmerName={farmer.name} />}
+          </>
+        )}
       </main>
     </div>
   );
@@ -205,12 +209,12 @@ function WeatherCard() {
     }
   }, []);
 
-  const { data: weather, isLoading } = useQuery({
+  const { data: weather, isLoading } = useQuery<any>({
     queryKey: ["/api/weather", latitude, longitude],
     enabled: !!latitude && !!longitude,
   });
 
-  if (isLoading || !weather) {
+  if (isLoading || !weather?.current) {
     return (
       <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
         <CardHeader>
@@ -226,7 +230,7 @@ function WeatherCard() {
     );
   }
 
-  const current = weather.current;
+  const current = weather.current || {};
   const getWeatherIcon = (code: number) => {
     if (code === 0) return <Cloud className="w-8 h-8" />;
     if (code <= 3) return <Cloud className="w-8 h-8" />;
@@ -349,7 +353,7 @@ function NotificationsCard({ farmerId }: { farmerId: string }) {
 
 // Projects Card
 function ProjectsCard({ farmerId }: { farmerId: string }) {
-  const { t } = useApp();
+  const { t, language } = useApp();
   const [showAddForm, setShowAddForm] = useState(false);
   const [newProject, setNewProject] = useState({
     name: "",
@@ -461,7 +465,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   const [isUploading, setIsUploading] = useState(false);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const { toast } = useToast();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
