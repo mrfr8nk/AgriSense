@@ -188,6 +188,7 @@ function WeatherCard() {
   const { t, language } = useApp();
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [locationName, setLocationName] = useState<string>("");
 
   useEffect(() => {
     // Get user location
@@ -209,6 +210,20 @@ function WeatherCard() {
     }
   }, []);
 
+  // Fetch location name from coordinates
+  useEffect(() => {
+    if (latitude && longitude) {
+      fetch(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`)
+        .then(res => res.json())
+        .then(data => {
+          const city = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "Your Location";
+          const country = data.address?.country || "";
+          setLocationName(`${city}, ${country}`.trim());
+        })
+        .catch(() => setLocationName(language === "en" ? "Current Location" : "Nzvimbo Yako"));
+    }
+  }, [latitude, longitude, language]);
+
   const { data: weather, isLoading } = useQuery<any>({
     queryKey: ["/api/weather", latitude, longitude],
     queryFn: async () => {
@@ -227,9 +242,14 @@ function WeatherCard() {
             <Cloud className="w-5 h-5" />
             {t.climateInsights}
           </CardTitle>
+          {locationName && (
+            <CardDescription className="text-base mt-2">
+              📍 {locationName}
+            </CardDescription>
+          )}
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600 dark:text-gray-400">Loading weather...</p>
+          <p className="text-gray-600 dark:text-gray-400">{language === "en" ? "Loading weather..." : "Iri kurodha..."}</p>
         </CardContent>
       </Card>
     );
@@ -250,7 +270,12 @@ function WeatherCard() {
           {getWeatherIcon(current.weather_code)}
           {t.climateInsights}
         </CardTitle>
-        <CardDescription>Current Conditions</CardDescription>
+        <div className="mt-2 space-y-1">
+          <CardDescription className="text-base font-semibold text-gray-900 dark:text-white">
+            📍 {locationName}
+          </CardDescription>
+          <CardDescription>{language === "en" ? "Current Conditions" : "Zvino Zvakaita"}</CardDescription>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
