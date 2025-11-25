@@ -135,7 +135,7 @@ function OverviewTab({ farmerId }: { farmerId: string }) {
 
 // Weather Card
 function WeatherCard() {
-  const { t } = useApp();
+  const { t, language } = useApp();
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
@@ -413,15 +413,17 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   const [question, setQuestion] = useState("");
   const { toast } = useToast();
 
-  const { data: messages = [] } = useQuery<ChatMessage[]>({
+  const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
     queryKey: [`/api/farmers/${farmerId}/chat`],
     enabled: !!farmerId,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const chatMutation = useMutation({
     mutationFn: (q: string) => apiRequest("POST", "/api/ai/chat", { question: q, farmerId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/farmers/${farmerId}/chat`] });
+      refetch();
       setQuestion("");
     },
     onError: () => {
@@ -507,9 +509,11 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
-  const { data: reports = [] } = useQuery<AnalysisReport[]>({
+  const { data: reports = [], refetch: refetchReports } = useQuery<AnalysisReport[]>({
     queryKey: [`/api/farmers/${farmerId}/analysis`],
     enabled: !!farmerId,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
   });
 
   const uploadToCatbox = async (file: File): Promise<string> => {
@@ -564,7 +568,7 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
   const analyzeMutation = useMutation({
     mutationFn: (url: string) => apiRequest("POST", "/api/ai/analyze-image", { imageUrl: url, farmerId }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/farmers/${farmerId}/analysis`] });
+      refetchReports();
       setImageUrl("");
       toast({
         title: language === "en" ? "Analysis Complete" : "Kuongorora Kwapera",
