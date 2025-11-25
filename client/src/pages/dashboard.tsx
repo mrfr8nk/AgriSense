@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Cloud, CloudRain, Droplets, Wind, Leaf, MessageSquare, Send, Upload,
   Calculator, Users, Bell, Globe, LogOut, Plus, TrendingUp, AlertTriangle,
-  Sprout, Target, DollarSign, Calendar, ThumbsUp, MessageCircle, Image as ImageIcon, X
+  Sprout, Target, DollarSign, Calendar, ThumbsUp, MessageCircle, Image as ImageIcon, X,
+  Sun, Moon
 } from "lucide-react";
 import type { Project, CommunityPost, Notification, ChatMessage, AnalysisReport } from "@shared/schema";
 
@@ -20,6 +21,43 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"overview" | "chat" | "analysis" | "planner" | "community">("overview");
+  const [theme, setTheme] = useState<"light" | "dark" | "eco">("light");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme as "light" | "dark" | "eco");
+    applyTheme(savedTheme as "light" | "dark" | "eco");
+  }, []);
+
+  const applyTheme = (t: "light" | "dark" | "eco") => {
+    const html = document.documentElement;
+    html.classList.remove("dark", "eco");
+    if (t === "dark") {
+      html.classList.add("dark");
+    } else if (t === "eco") {
+      html.classList.add("eco");
+    }
+    localStorage.setItem("theme", t);
+  };
+
+  const toggleTheme = () => {
+    const themes: ("light" | "dark" | "eco")[] = ["light", "dark", "eco"];
+    const currentIndex = themes.indexOf(theme);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+  };
+
+  const getThemeIcon = () => {
+    switch (theme) {
+      case "dark":
+        return <Moon className="w-5 h-5" />;
+      case "eco":
+        return <Leaf className="w-5 h-5" />;
+      default:
+        return <Sun className="w-5 h-5" />;
+    }
+  };
 
   // Logout handler
   const handleLogout = () => {
@@ -46,6 +84,14 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-3">
+              <button
+                onClick={toggleTheme}
+                data-testid="button-theme-toggle"
+                className="p-2.5 rounded-full bg-white/10 dark:bg-white/5 eco:bg-emerald-400/10 border border-white/20 dark:border-white/10 eco:border-emerald-400/30 backdrop-blur-md hover:bg-white/20 dark:hover:bg-white/10 eco:hover:bg-emerald-400/20 transition-all duration-300 hover:scale-110"
+                title={`Switch to ${theme === "light" ? "dark" : theme === "dark" ? "eco" : "light"} mode`}
+              >
+                {getThemeIcon()}
+              </button>
               <button
                 onClick={() => setLanguage(language === "en" ? "sn" : "en")}
                 data-testid="button-language-toggle"
@@ -195,7 +241,7 @@ function WeatherCard() {
           {getWeatherIcon(current.weather_code)}
           {t.climateInsights}
         </CardTitle>
-        <CardDescription>{language === "en" ? "Current Conditions" : "Mamiriro Aripo"}</CardDescription>
+        <CardDescription>Current Conditions</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -411,6 +457,8 @@ function ProjectsCard({ farmerId }: { farmerId: string }) {
 function ChatTab({ farmerId }: { farmerId: string }) {
   const { t, language } = useApp();
   const [question, setQuestion] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
@@ -425,6 +473,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
     onSuccess: () => {
       refetch();
       setQuestion("");
+      setImageUrl("");
     },
     onError: () => {
       toast({
@@ -435,70 +484,181 @@ function ChatTab({ farmerId }: { farmerId: string }) {
     },
   });
 
+  const uploadToCatbox = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', file);
+
+    const response = await fetch('https://catbox.moe/user/api.php', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error('Upload failed');
+    }
+
+    return await response.text();
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Error",
+        description: language === "en" ? "Please select an image file" : "Sarudza mufananidzo",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const url = await uploadToCatbox(file);
+      setImageUrl(url);
+      toast({
+        title: language === "en" ? "Upload Complete" : "Yaisa",
+        description: language === "en" ? "Image uploaded successfully" : "Mufananidzo waisa",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: language === "en" ? "Failed to upload image" : "Hazvina kubuda",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSend = () => {
     if (!question.trim()) return;
-    chatMutation.mutate(question);
+    const finalQuestion = imageUrl ? `${question}\n\nImage: ${imageUrl}` : question;
+    chatMutation.mutate(finalQuestion);
   };
 
   return (
-    <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5" />
-          {t.aiAssistant}
-        </CardTitle>
-        <CardDescription>
-          {language === "en"
-            ? "Get expert farming advice powered by AI"
-            : "Wana rubatsiro rwevarimi kubva kuAI"}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="h-96 overflow-y-auto mb-4 space-y-4 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-            >
+    <div className="grid grid-cols-1 gap-6">
+      <Card className="bg-gradient-to-br from-white/80 to-emerald-50/80 dark:from-gray-800/80 dark:to-emerald-950/20 backdrop-blur-xl border-2 border-emerald-200/50 dark:border-emerald-800/30 shadow-2xl">
+        <CardHeader className="border-b border-emerald-200/50 dark:border-emerald-800/30 bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg">
+                <MessageSquare className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-xl">{t.aiAssistant}</CardTitle>
+                <CardDescription className="text-sm">
+                  {language === "en"
+                    ? "Get expert farming advice powered by AI"
+                    : "Wana rubatsiro rwevarimi kubva kuAI"}
+                </CardDescription>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="h-[500px] overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-transparent to-emerald-50/30 dark:to-emerald-950/10">
+            {messages.length === 0 && (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center space-y-3">
+                  <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full flex items-center justify-center">
+                    <MessageSquare className="w-8 h-8 text-white" />
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {language === "en" ? "Start a conversation with your AI farming assistant" : "Tanga kukurukura neAI yekurima"}
+                  </p>
+                </div>
+              </div>
+            )}
+            {messages.map((msg) => (
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  msg.role === "user"
-                    ? "bg-emerald-500 text-white"
-                    : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                }`}
+                key={msg.id}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-300`}
               >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <div
+                  className={`max-w-[75%] px-5 py-3 rounded-2xl shadow-lg ${
+                    msg.role === "user"
+                      ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-br-sm"
+                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-200/50 dark:border-emerald-800/30 rounded-bl-sm"
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                  <span className="text-xs opacity-70 mt-2 block">
+                    {new Date(msg.timestamp).toLocaleTimeString()}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-          {chatMutation.isPending && (
-            <div className="flex justify-start">
-              <div className="max-w-xs lg:max-w-md px-4 py-2 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-                <p className="text-sm">{t.typing}</p>
+            ))}
+            {chatMutation.isPending && (
+              <div className="flex justify-start animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div className="max-w-[75%] px-5 py-3 rounded-2xl rounded-bl-sm bg-white dark:bg-gray-800 border border-emerald-200/50 dark:border-emerald-800/30 shadow-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                      <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">AI is thinking...</span>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div className="flex gap-2">
-          <Input
-            placeholder={t.askQuestion}
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleSend()}
-            data-testid="input-chat-question"
-            disabled={chatMutation.isPending}
-          />
-          <Button
-            onClick={handleSend}
-            data-testid="button-send-chat"
-            disabled={chatMutation.isPending || !question.trim()}
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          <div className="p-4 border-t border-emerald-200/50 dark:border-emerald-800/30 bg-white/50 dark:bg-gray-900/50">
+            {imageUrl && (
+              <div className="mb-3 relative inline-block">
+                <img src={imageUrl} alt="Attached" className="h-20 w-20 object-cover rounded-lg border-2 border-emerald-500" />
+                <button
+                  onClick={() => setImageUrl("")}
+                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  disabled={isUploading}
+                  className="hidden"
+                />
+                <div className="p-2.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-all">
+                  {isUploading ? (
+                    <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <ImageIcon className="w-5 h-5" />
+                  )}
+                </div>
+              </label>
+              <Input
+                placeholder={t.askQuestion}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+                data-testid="input-chat-question"
+                disabled={chatMutation.isPending}
+                className="flex-1 bg-white/80 dark:bg-gray-800/80 border-emerald-200 dark:border-emerald-800 focus:border-emerald-500 focus:ring-emerald-500"
+              />
+              <Button
+                onClick={handleSend}
+                data-testid="button-send-chat"
+                disabled={chatMutation.isPending || !question.trim()}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
