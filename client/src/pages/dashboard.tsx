@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useApp } from "@/contexts/AppContext";
 import { useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -460,18 +460,33 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   const [imageUrl, setImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
     queryKey: [`/api/farmers/${farmerId}/chat`],
     enabled: !!farmerId,
-    refetchInterval: false,
+    refetchInterval: chatMutation.isPending ? 1000 : false,
     refetchOnWindowFocus: false,
   });
 
   const chatMutation = useMutation({
-    mutationFn: (q: string) => apiRequest("POST", "/api/ai/chat", { question: q, farmerId }),
-    onSuccess: () => {
-      refetch();
+    mutationFn: async (q: string) => {
+      await apiRequest("POST", "/api/ai/chat", { question: q, farmerId });
+      // Refetch immediately after posting
+      await refetch();
+    },
+    onSuccess: async () => {
+      // Refetch again to get AI's response
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      await refetch();
       setQuestion("");
       setImageUrl("");
     },
@@ -606,6 +621,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="p-4 border-t border-emerald-200/50 dark:border-emerald-800/30 bg-white/50 dark:bg-gray-900/50">
