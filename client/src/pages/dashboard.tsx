@@ -459,6 +459,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   const [question, setQuestion] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -469,7 +470,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
     queryKey: [`/api/farmers/${farmerId}/chat`],
     enabled: !!farmerId,
-    refetchInterval: chatMutation.isPending ? 1000 : false,
+    refetchInterval: isWaitingForResponse ? 1000 : false,
     refetchOnWindowFocus: false,
   });
 
@@ -479,6 +480,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
 
   const chatMutation = useMutation({
     mutationFn: async (q: string) => {
+      setIsWaitingForResponse(true);
       await apiRequest("POST", "/api/ai/chat", { question: q, farmerId });
       // Refetch immediately after posting
       await refetch();
@@ -487,10 +489,12 @@ function ChatTab({ farmerId }: { farmerId: string }) {
       // Refetch again to get AI's response
       await new Promise(resolve => setTimeout(resolve, 1500));
       await refetch();
+      setIsWaitingForResponse(false);
       setQuestion("");
       setImageUrl("");
     },
     onError: () => {
+      setIsWaitingForResponse(false);
       toast({
         title: "Error",
         description: language === "en" ? "Failed to send message" : "Hazvina kubuda",
@@ -607,7 +611,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
                 </div>
               </div>
             ))}
-            {chatMutation.isPending && (
+            {isWaitingForResponse && (
               <div className="flex justify-start animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="max-w-[75%] px-5 py-3 rounded-2xl rounded-bl-sm bg-white dark:bg-gray-800 border border-emerald-200/50 dark:border-emerald-800/30 shadow-lg">
                   <div className="flex items-center gap-2">
