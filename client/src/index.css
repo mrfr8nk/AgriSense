@@ -195,6 +195,28 @@
  * Even without handling focused or not, this is six possible combinations that
  * need to be distinguished from eachother visually.
  */
+/* ECO MODE THEME */
+.eco {
+  --background: 120 40% 98%;
+  --foreground: 120 40% 15%;
+  --border: 120 30% 92%;
+  --card: 120 35% 96%;
+  --card-foreground: 120 30% 15%;
+  --card-border: 120 25% 88%;
+  --primary: 120 60% 42%;
+  --primary-foreground: 120 60% 98%;
+  --secondary: 120 30% 85%;
+  --secondary-foreground: 120 30% 20%;
+  --muted: 120 20% 88%;
+  --muted-foreground: 120 20% 40%;
+  --accent: 120 50% 60%;
+  --accent-foreground: 120 50% 10%;
+  --destructive: 0 72% 42%;
+  --destructive-foreground: 0 72% 98%;
+  --input: 120 20% 85%;
+  --ring: 120 60% 42%;
+}
+
 @layer utilities {
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
