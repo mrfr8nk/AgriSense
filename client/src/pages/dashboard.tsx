@@ -833,7 +833,12 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
 
     try {
       const reader = new FileReader();
-      reader.onload = (e) => setSelectedImage(e.target.result as string);
+      reader.onload = (e) => {
+        const result = (e.target as FileReader | null)?.result;
+        if (result) {
+          setSelectedImage(result as string);
+        }
+      };
       reader.readAsDataURL(file);
 
       const url = await uploadToCatbox(file);
