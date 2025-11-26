@@ -746,7 +746,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
                 onChange={(e) => setQuestion(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
                 data-testid="input-chat-question"
-                disabled={chatMutation.isPending}
+                disabled={isProcessing}
                 className="flex-1 bg-white/80 dark:bg-gray-800/80 border-emerald-200 dark:border-emerald-800 focus:border-emerald-500 focus:ring-emerald-500"
               />
               <Button
