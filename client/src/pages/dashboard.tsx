@@ -427,12 +427,18 @@ function ProjectsCard({ farmerId }: { farmerId: string }) {
     enabled: !!farmerId,
   });
 
+  const { toast } = useToast();
+
   const addProjectMutation = useMutation({
     mutationFn: (data: any) => apiRequest("POST", "/api/projects", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/farmers/${farmerId}/projects`] });
       setShowAddForm(false);
       setNewProject({ name: "", type: "crop", landSize: "" });
+      toast({
+        title: language === "en" ? "Project Created!" : "Proyekiti Yaumbwa!",
+        description: language === "en" ? "Your project was added successfully" : "Proyekiti yako yaimbwa zvakanyanya",
+      });
     },
   });
 
