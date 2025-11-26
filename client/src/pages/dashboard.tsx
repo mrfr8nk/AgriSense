@@ -528,10 +528,11 @@ function ProjectsCard({ farmerId }: { farmerId: string }) {
 // Chat Tab
 function ChatTab({ farmerId }: { farmerId: string }) {
   const { t, language } = useApp();
+  const [messages, setMessages] = useState<any[]>([]);
   const [question, setQuestion] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -539,41 +540,9 @@ function ChatTab({ farmerId }: { farmerId: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const { data: messages = [], refetch } = useQuery<ChatMessage[]>({
-    queryKey: [`/api/farmers/${farmerId}/chat`],
-    enabled: !!farmerId,
-    refetchInterval: isWaitingForResponse ? 1000 : false,
-    refetchOnWindowFocus: false,
-  });
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  const chatMutation = useMutation({
-    mutationFn: async (q: string) => {
-      setIsWaitingForResponse(true);
-      await apiRequest("POST", "/api/ai/chat", { question: q, farmerId });
-      // Refetch immediately after posting
-      await refetch();
-    },
-    onSuccess: async () => {
-      // Refetch again to get AI's response
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      await refetch();
-      setIsWaitingForResponse(false);
-      setQuestion("");
-      setImageUrl("");
-    },
-    onError: () => {
-      setIsWaitingForResponse(false);
-      toast({
-        title: "Error",
-        description: language === "en" ? "Failed to send message" : "Hazvina kubuda",
-        variant: "destructive",
-      });
-    },
-  });
 
   const uploadToCatbox = async (file: File): Promise<string> => {
     try {
@@ -643,10 +612,38 @@ function ChatTab({ farmerId }: { farmerId: string }) {
     }
   };
 
-  const handleSend = () => {
-    if (!question.trim() || chatMutation.isPending) return;
-    const msg = imageUrl ? `${question}\nImage: ${imageUrl}` : question;
-    chatMutation.mutate(msg);
+  const handleSend = async () => {
+    if (!question.trim() || isProcessing) return;
+
+    const userMsg = question;
+    setMessages((prev) => [...prev, { type: "user", content: userMsg, timestamp: new Date() }]);
+    setQuestion("");
+    setIsProcessing(true);
+
+    try {
+      const prompt = encodeURIComponent("You are a helpful farming assistant. Provide practical advice about crops, livestock, weather, and farming.");
+      const q = encodeURIComponent(userMsg);
+      const response = await fetch(
+        `https://api.bk9.dev/ai/BK9?BK9=${prompt}&q=${q}&model=gemini_2_5_flash`
+      );
+
+      if (!response.ok) throw new Error("API error");
+      const data = await response.json();
+
+      if (data.status && data.BK9) {
+        setMessages((prev) => [...prev, { type: "assistant", content: data.BK9, timestamp: new Date() }]);
+      } else {
+        throw new Error("Invalid response");
+      }
+    } catch (error: any) {
+      setMessages((prev) => [...prev, { 
+        type: "error", 
+        content: language === "en" ? "Failed to get response" : "Hazvina kubuda", 
+        timestamp: new Date() 
+      }]);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -683,26 +680,21 @@ function ChatTab({ farmerId }: { farmerId: string }) {
                 </div>
               </div>
             )}
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-300`}
-              >
-                <div
-                  className={`max-w-[75%] px-5 py-3 rounded-2xl shadow-lg ${
-                    msg.role === "user"
-                      ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-br-sm"
-                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-200/50 dark:border-emerald-800/30 rounded-bl-sm"
-                  }`}
-                >
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`flex ${msg.type === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-300`}>
+                <div className={`max-w-[75%] px-5 py-3 rounded-2xl shadow-lg ${
+                  msg.type === "user"
+                    ? "bg-gradient-to-br from-emerald-500 to-teal-500 text-white rounded-br-sm"
+                    : msg.type === "error"
+                    ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-bl-sm"
+                    : "bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-emerald-200/50 dark:border-emerald-800/30 rounded-bl-sm"
+                }`}>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                  <span className="text-xs opacity-70 mt-2 block">
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </span>
+                  <span className="text-xs opacity-70 mt-2 block">{msg.timestamp.toLocaleTimeString()}</span>
                 </div>
               </div>
             ))}
-            {isWaitingForResponse && (
+            {isProcessing && (
               <div className="flex justify-start animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <div className="max-w-[75%] px-5 py-3 rounded-2xl rounded-bl-sm bg-white dark:bg-gray-800 border border-emerald-200/50 dark:border-emerald-800/30 shadow-lg">
                   <div className="flex items-center gap-2">
@@ -711,7 +703,7 @@ function ChatTab({ farmerId }: { farmerId: string }) {
                       <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
                       <span className="w-2 h-2 bg-emerald-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
                     </div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">AI is thinking...</span>
+                    <span className="text-sm text-gray-600 dark:text-gray-400">{language === "en" ? "AI is thinking..." : "AI iri kuva nedudziramombe..."}</span>
                   </div>
                 </div>
               </div>
@@ -760,10 +752,10 @@ function ChatTab({ farmerId }: { farmerId: string }) {
               <Button
                 onClick={handleSend}
                 data-testid="button-send-chat"
-                disabled={chatMutation.isPending || !question.trim()}
+                disabled={isProcessing || !question.trim()}
                 className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-6"
               >
-                <Send className="w-4 h-4" />
+                {isProcessing ? <span className="animate-spin">⟳</span> : <Send className="w-4 h-4" />}
               </Button>
             </div>
           </div>
