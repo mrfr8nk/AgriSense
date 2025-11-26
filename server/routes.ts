@@ -301,6 +301,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(notification);
   });
 
+  // Image Upload to Catbox
+  app.post("/api/upload", async (req, res) => {
+    try {
+      const contentType = req.headers["content-type"];
+      if (!contentType || !contentType.includes("multipart/form-data")) {
+        return res.status(400).json({
+          success: false,
+          error: "Content-Type must be multipart/form-data",
+        });
+      }
+
+      const boundary = contentType.split("boundary=")[1];
+      if (!boundary) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid multipart/form-data",
+        });
+      }
+
+      const chunks: Buffer[] = [];
+      for await (const chunk of req) {
+        chunks.push(chunk);
+      }
+      const buffer = Buffer.concat(chunks);
+      const binaryString = buffer.toString("binary");
+      const parts = binaryString.split(`--${boundary}`);
+
+      let fileBuffer: Buffer | null = null;
+      let fileName = "upload";
+      let mimeType = "application/octet-stream";
+
+      for (const part of parts) {
+        if (part.includes("Content-Disposition: form-data")) {
+          const nameMatch = part.match(/name="([^"]+)"/);
+          const filenameMatch = part.match(/filename="([^"]+)"/);
+          const contentTypeMatch = part.match(/Content-Type: ([^\r\n]+)/);
+
+          if (filenameMatch) {
+            fileName = filenameMatch[1];
+          }
+
+          if (contentTypeMatch) {
+            mimeType = contentTypeMatch[1];
+          }
+
+          if (nameMatch && nameMatch[1] === "file" && filenameMatch) {
+            const fileDataStart = part.indexOf("\r\n\r\n") + 4;
+            const fileDataEnd = part.lastIndexOf("\r\n");
+
+            if (fileDataStart > 3 && fileDataEnd > fileDataStart) {
+              const fileData = part.substring(fileDataStart, fileDataEnd);
+              fileBuffer = Buffer.from(fileData, "binary");
+            }
+          }
+        }
+      }
+
+      if (!fileBuffer) {
+        return res.status(400).json({
+          success: false,
+          error: "No file found in request",
+        });
+      }
+
+      const CATBOX_USERHASH = "61101e1ef85d3a146d5841cee";
+      const formData = new FormData();
+      formData.append("reqtype", "fileupload");
+      formData.append("userhash", CATBOX_USERHASH);
+      formData.append("fileToUpload", new Blob([fileBuffer], { type: mimeType }), fileName);
+
+      const response = await fetch("https://catbox.moe/user/api.php", {
+        method: "POST",
+        body: formData,
+      });
+
+      const catboxUrl = await response.text();
+
+      if (!catboxUrl.startsWith("http")) {
+        throw new Error("Invalid response from Catbox: " + catboxUrl);
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          url: catboxUrl.trim(),
+          fileName: fileName,
+          size: fileBuffer.length,
+          mimeType: mimeType,
+        },
+      });
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      return res.status(500).json({
+        success: false,
+        error: "Upload failed",
+        message: error.message,
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
