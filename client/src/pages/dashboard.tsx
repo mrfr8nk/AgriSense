@@ -771,46 +771,54 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   );
 }
 
-// Image Analysis Tab
+// Image Analysis Tab - Using stable Catbox upload via /api/upload endpoint
 function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
-  const { t, language } = useApp();
+  const { language } = useApp();
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageUrl, setImageUrl] = useState("");
-  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const { data: reports = [], refetch: refetchReports } = useQuery<AnalysisReport[]>({
-    queryKey: [`/api/farmers/${farmerId}/analysis`],
-    enabled: !!farmerId,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
-  });
-
-  const uploadToCatbox = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('fileToUpload', file);
-
+  const uploadToCatbox = async (file: File) => {
     try {
-      const response = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
+      setUploading(true);
+      setUploadError("");
+
+      if (file.size > 200 * 1024 * 1024) {
+        throw new Error(language === "en" ? "File too large. Max size is 200MB" : "Faili nokurebuka. Max size 200MB");
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed with status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Upload failed: ${response.status}`);
       }
 
-      const url = await response.text();
+      const data = await response.json();
 
-      // Validate URL
-      if (!url || !url.startsWith('http')) {
-        throw new Error('Invalid URL returned from upload');
+      if (!data.success || !data.data.url) {
+        throw new Error("Invalid response from server");
       }
 
-      return url.trim();
-    } catch (error) {
-      console.error('Upload error:', error);
+      return data.data.url;
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      setUploadError(error.message);
       throw error;
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -818,141 +826,238 @@ function ImageAnalysisTab({ farmerId }: { farmerId: string }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Error",
-        description: language === "en" ? "Please select an image file" : "Sarudza mufananidzo",
-        variant: "destructive",
-      });
+    if (!file.type.startsWith("image/")) {
+      setUploadError(language === "en" ? "Please select an image file" : "Sarudza mufananidzo");
       return;
     }
 
-    // Check file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        title: "Error",
-        description: language === "en" ? "Image too large (max 10MB)" : "Mufananidzo mukuru zvikuru",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsUploading(true);
     try {
+      const reader = new FileReader();
+      reader.onload = (e) => setSelectedImage(e.target.result as string);
+      reader.readAsDataURL(file);
+
       const url = await uploadToCatbox(file);
       setImageUrl(url);
-      toast({
-        title: language === "en" ? "Upload Complete" : "Yaisa",
-        description: language === "en" ? "Image uploaded successfully" : "Mufananidzo waisa",
-      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "system",
+          content: language === "en" 
+            ? `✓ Image uploaded successfully!\nURL: ${url}` 
+            : `✓ Mufananidzo waisa zvakanyanya!\nURL: ${url}`,
+          imageUrl: url,
+          timestamp: new Date(),
+        },
+      ]);
     } catch (error: any) {
-      console.error('Upload failed:', error);
-      toast({
-        title: "Error",
-        description: language === "en" ? `Failed to upload: ${error.message || 'Unknown error'}` : "Hazvina kubuda",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "error",
+          content: language === "en"
+            ? `✗ Failed to upload image: ${error.message}`
+            : `✗ Hazvina kubuda kuisa: ${error.message}`,
+          timestamp: new Date(),
+        },
+      ]);
     }
   };
 
-  const analyzeMutation = useMutation({
-    mutationFn: (url: string) => apiRequest("POST", "/api/ai/analyze-image", { imageUrl: url, farmerId }),
-    onSuccess: () => {
-      refetchReports();
-      setImageUrl("");
-      toast({
-        title: language === "en" ? "Analysis Complete" : "Kuongororwa Kwapera",
-        description: language === "en" ? "Image analyzed successfully" : "Mufananidzo waongororwa",
-      });
-    },
-  });
+  const processWithVision = async (question: string, imgUrl: string) => {
+    try {
+      setProcessing(true);
+      const apiUrl = `https://api.bk9.dev/ai/vision?q=${encodeURIComponent(question)}&image_url=${encodeURIComponent(imgUrl)}&model=meta-llama/llama-4-scout-17b-16e-instruct`;
+
+      const response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status && data.BK9) {
+        return data.BK9;
+      } else {
+        throw new Error("Invalid API response format");
+      }
+    } catch (error: any) {
+      console.error("Vision API error:", error);
+      throw error;
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleSend = async () => {
+    if (!input.trim() || processing) return;
+
+    if (!imageUrl) {
+      setUploadError(language === "en" ? "Please upload an image first" : "Isa mufananidzo ntanga");
+      return;
+    }
+
+    const userMessage = {
+      type: "user",
+      content: input,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+
+    try {
+      const response = await processWithVision(input, imageUrl);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "assistant",
+          content: response,
+          timestamp: new Date(),
+        },
+      ]);
+    } catch (error: any) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          type: "error",
+          content: language === "en"
+            ? `✗ Failed to process: ${error.message}`
+            : `✗ Hazvina kubuda kupanga: ${error.message}`,
+          timestamp: new Date(),
+        },
+      ]);
+    }
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImageUrl("");
+    setUploadError("");
+    setMessages([]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Upload className="w-5 h-5" />
-            {t.uploadImage}
-          </CardTitle>
-          <CardDescription>
-            {language === "en"
-              ? "Upload a photo of your crops or livestock for AI analysis"
-              : "Isa mufananidzo wezvirimwa kana zvipfuwo zvako kuti AI iongorore"}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <label
-                htmlFor="image-file-input"
-                className="cursor-pointer w-full px-4 py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-emerald-500 transition-colors text-center"
-              >
-                <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {isUploading
-                    ? (language === "en" ? "Uploading..." : "Iri kuisa...")
-                    : (language === "en" ? "Click to select image" : "Dzvanya usarudze mufananidzo")}
-                </span>
-              </label>
-              <input
-                id="image-file-input"
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                disabled={isUploading}
-                className="hidden"
-                data-testid="input-image-file"
-              />
-            </div>
-
-            {imageUrl && (
-              <div className="relative">
-                <img
-                  src={imageUrl}
-                  alt="Preview"
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-                <button
-                  onClick={() => setImageUrl("")}
-                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            )}
-
-            <Button
-              onClick={() => analyzeMutation.mutate(imageUrl)}
-              disabled={analyzeMutation.isPending || !imageUrl || isUploading}
-              data-testid="button-analyze-image"
-              className="w-full"
-            >
-              {analyzeMutation.isPending ? t.analyzing : (language === "en" ? "Analyze Image" : "Ongorora")}
-            </Button>
+    <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <ImageIcon className="w-5 h-5" />
+          {language === "en" ? "Crop Analysis with Vision AI" : "Kuongorora Zvirimwa ne Vision AI"}
+        </CardTitle>
+        <CardDescription>
+          {language === "en"
+            ? "Upload images and ask questions about your crops"
+            : "Isa mifananidzo uye buza mibvunzo nezvirimwa"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {uploadError && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm flex items-center gap-2">
+            <X className="w-4 h-4" />
+            {uploadError}
           </div>
-        </CardContent>
-      </Card>
+        )}
 
-      <Card className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-xl border-white/20">
-        <CardHeader>
-          <CardTitle>{language === "en" ? "Analysis History" : "Zvakamboongororwa"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4 max-h-96 overflow-y-auto">
-            {reports.map((report) => (
-              <div key={report.id} className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                <p className="text-sm text-gray-900 dark:text-white whitespace-pre-wrap">
-                  {report.diagnosis}
-                </p>
+        {selectedImage && (
+          <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+            <img src={selectedImage} alt="Preview" className="h-12 w-12 object-cover rounded" />
+            <div className="flex-1 text-sm">
+              <p className="font-semibold text-emerald-700 dark:text-emerald-300">
+                {language === "en" ? "Image Ready" : "Mufananidzo Nzira"}
+              </p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{imageUrl}</p>
+            </div>
+            <button
+              onClick={clearImage}
+              className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="flex-1 gap-2"
+          >
+            {uploading ? (
+              <>
+                <MessageSquare className="w-4 h-4 animate-spin" />
+                {language === "en" ? "Uploading..." : "Iri kuisa..."}
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                {language === "en" ? "Upload Image" : "Isa Mufananidzo"}
+              </>
+            )}
+          </Button>
+        </div>
+
+        {messages.length > 0 && (
+          <div className="space-y-3 max-h-60 overflow-y-auto">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded-lg ${
+                  msg.type === "user"
+                    ? "bg-emerald-100 dark:bg-emerald-900/30 text-gray-900 dark:text-white"
+                    : msg.type === "error"
+                    ? "bg-red-100 dark:bg-red-900/20 text-red-900 dark:text-red-200"
+                    : "bg-gray-100 dark:bg-gray-700/50 text-gray-900 dark:text-white"
+                }`}
+              >
+                {msg.imageUrl && <img src={msg.imageUrl} alt="Analysis" className="rounded mb-2 max-w-xs" />}
+                <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                <p className="text-xs opacity-70 mt-1">{msg.timestamp.toLocaleTimeString()}</p>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        )}
+
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+            placeholder={
+              imageUrl
+                ? language === "en"
+                  ? "Ask about the image..."
+                  : "Buza zvemuvanhu wemufananidzo..."
+                : language === "en"
+                ? "Upload image first..."
+                : "Isa mufananidzo ntanga..."
+            }
+            disabled={!imageUrl || processing}
+            className="flex-1 px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white disabled:opacity-50"
+          />
+          <Button
+            onClick={handleSend}
+            disabled={!input.trim() || !imageUrl || processing}
+            size="icon"
+          >
+            {processing ? <MessageSquare className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+      </CardContent>
+    </Card>
   );
 }
 
