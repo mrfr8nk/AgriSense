@@ -488,10 +488,10 @@ function ProjectsCard({ farmerId }: { farmerId: string }) {
               data-testid="input-project-land-size"
             />
             <div className="flex gap-2">
-              <Button onClick={handleAddProject} data-testid="button-save-project" className="flex-1">
-                {language === "en" ? "Save" : "Chengetedza"}
+              <Button onClick={handleAddProject} disabled={addProjectMutation.isPending || !newProject.name} data-testid="button-save-project" className="flex-1">
+                {addProjectMutation.isPending ? (language === "en" ? "Saving..." : "Iri kusave...") : (language === "en" ? "Save" : "Chengetedza")}
               </Button>
-              <Button onClick={() => setShowAddForm(false)} variant="outline">
+              <Button onClick={() => setShowAddForm(false)} variant="outline" disabled={addProjectMutation.isPending}>
                 {language === "en" ? "Cancel" : "Kanzura"}
               </Button>
             </div>
@@ -576,28 +576,24 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   });
 
   const uploadToCatbox = async (file: File): Promise<string> => {
-    const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('fileToUpload', file);
-
     try {
-      const response = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed with status: ${response.status}`);
+        throw new Error(`Upload failed: ${response.status}`);
       }
 
-      const url = await response.text();
-
-      // Validate URL
-      if (!url || !url.startsWith('http')) {
-        throw new Error('Invalid URL returned from upload');
+      const data = await response.json();
+      if (!data.success || !data.data.url) {
+        throw new Error("Invalid response from server");
       }
-
-      return url.trim();
+      return data.data.url;
     } catch (error) {
       console.error('Upload error:', error);
       throw error;
@@ -648,9 +644,9 @@ function ChatTab({ farmerId }: { farmerId: string }) {
   };
 
   const handleSend = () => {
-    if (!question.trim()) return;
-    const finalQuestion = imageUrl ? `${question}\n\nImage: ${imageUrl}` : question;
-    chatMutation.mutate(finalQuestion);
+    if (!question.trim() || chatMutation.isPending) return;
+    const msg = imageUrl ? `${question}\nImage: ${imageUrl}` : question;
+    chatMutation.mutate(msg);
   };
 
   return (
@@ -1307,7 +1303,10 @@ function CommunityTab({ farmerId, farmerName }: { farmerId: string; farmerName: 
           </select>
           <Button
             onClick={() => {
-              if (!newPost.content || !farmerId || !farmerName) return;
+              if (!newPost.content || !farmerId || !farmerName) {
+                console.log("Missing data:", { content: newPost.content, farmerId, farmerName });
+                return;
+              }
               postMutation.mutate({
                 content: newPost.content,
                 category: newPost.category,
@@ -1316,12 +1315,16 @@ function CommunityTab({ farmerId, farmerName }: { farmerId: string; farmerName: 
                 timestamp: new Date().toISOString(),
               });
             }}
-            disabled={postMutation.isPending || !newPost.content}
+            disabled={postMutation.isPending || !newPost.content || !farmerId || !farmerName}
             data-testid="button-submit-post"
             className="w-full"
           >
-            <Users className="w-4 h-4 mr-2" />
-            {t.post}
+            {postMutation.isPending ? (language === "en" ? "Posting..." : "Iri kubudisa...") : (
+              <>
+                <Users className="w-4 h-4 mr-2" />
+                {t.post}
+              </>
+            )}
           </Button>
         </CardContent>
       </Card>
